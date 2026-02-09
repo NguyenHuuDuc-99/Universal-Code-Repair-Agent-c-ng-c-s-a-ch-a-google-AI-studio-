@@ -1,0 +1,5 @@
+{
+  "name": "Universal Code Repair Agent(công cụ sửa chữa google AI studio)",
+  "description": "A powerful AI-driven tool that repairs Python, JSON, and Prompt syntax using a simulated debug engine and real-time code execution verification.",
+  "requestFramePermissions": []
+}
