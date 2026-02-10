@@ -1,18 +1,19 @@
 import React, { useState, useCallback } from 'react';
-import { CodeType, Language } from './types';
+import { CodeType, Language, AppError } from './types';
 import { repairCode } from './services/geminiService';
 import { Header } from './components/Header';
 import { CodePanel } from './components/CodePanel';
 import { HelpModal } from './components/HelpModal';
+import { ExecutionFlow } from './components/ExecutionFlow';
 import { getTranslation } from './translations';
-import { Play, Terminal, FileJson, Hash, MessageSquareText, Loader2, AlertCircle, Wand2 } from 'lucide-react';
+import { Play, Terminal, FileJson, Hash, MessageSquareText, Loader2, AlertCircle, Wand2, Lightbulb } from 'lucide-react';
 
 const App: React.FC = () => {
   const [inputCode, setInputCode] = useState<string>('');
   const [outputCode, setOutputCode] = useState<string>('');
   const [selectedType, setSelectedType] = useState<CodeType>(CodeType.JSON);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
   const [language, setLanguage] = useState<Language>('en');
   const [showHelp, setShowHelp] = useState<boolean>(false);
 
@@ -34,12 +35,30 @@ const App: React.FC = () => {
       const result = await repairCode(inputCode, selectedType, language);
       setOutputCode(result);
     } catch (err: any) {
-      // If error is generic, use translated generic error, else use string
-      if (err.message && err.message.includes("API key")) {
-          setError(t.errorGemini);
+      // Handle structured AppError or generic error
+      let appError: AppError = {
+        message: t.errors.default.message,
+        suggestion: t.errors.default.suggestion
+      };
+
+      // Map service error strings to localized messages
+      const msg = err.message || "";
+      
+      if (msg === "API Key Error") {
+        appError = t.errors.apiKey;
+      } else if (msg === "Quota Exceeded") {
+        appError = t.errors.quota;
+      } else if (msg === "Server Error") {
+        appError = t.errors.server;
+      } else if (msg === "Safety Block") {
+        appError = t.errors.safety;
       } else {
-          setError(err.message || t.errorUnexpected);
+        // Fallback for unexpected errors
+        appError.message = msg || t.errorUnexpected;
+        appError.suggestion = t.errors.default.suggestion;
       }
+      
+      setError(appError);
     } finally {
       setIsLoading(false);
     }
@@ -181,16 +200,29 @@ const App: React.FC = () => {
 
           <div className="relative flex-1">
              {error ? (
-              <div className="absolute inset-0 bg-gray-900 rounded-xl border border-red-900/50 flex flex-col items-center justify-center text-red-400 p-6 text-center">
-                <AlertCircle className="w-12 h-12 mb-4 opacity-50" />
-                <h3 className="text-lg font-bold mb-2">{t.repairFailed}</h3>
-                <p className="max-w-md opacity-80">{error}</p>
-                <button 
-                  onClick={() => setError(null)}
-                  className="mt-4 px-4 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-300 rounded-md text-sm transition-colors border border-red-800/50"
-                >
-                  {t.dismiss}
-                </button>
+              <div className="absolute inset-0 bg-gray-900 rounded-xl border border-red-900/50 flex flex-col items-center justify-center text-red-400 p-6 text-center z-20">
+                <div className="bg-gray-800 p-6 rounded-2xl border border-red-900/50 shadow-2xl max-w-md w-full">
+                  <div className="flex flex-col items-center mb-4">
+                    <div className="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mb-3">
+                      <AlertCircle className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white">{error.message}</h3>
+                  </div>
+                  
+                  {error.suggestion && (
+                    <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700 mb-6 flex gap-3 text-left">
+                      <Lightbulb className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+                      <p className="text-sm text-gray-300">{error.suggestion}</p>
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={() => setError(null)}
+                    className="w-full px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg font-medium transition-colors shadow-lg shadow-red-900/20"
+                  >
+                    {t.dismiss}
+                  </button>
+                </div>
               </div>
              ) : (
                <CodePanel 
@@ -202,6 +234,13 @@ const App: React.FC = () => {
                 copyTooltip={t.copy}
                 clearTooltip={t.clear}
                 placeholder={isLoading ? t.outputPlaceholderLoading : t.outputPlaceholderDefault}
+                topContent={
+                  <ExecutionFlow 
+                    status={isLoading ? 'loading' : error ? 'error' : outputCode ? 'success' : 'idle'}
+                    resultText={outputCode}
+                    language={language}
+                  />
+                }
               />
              )}
           </div>

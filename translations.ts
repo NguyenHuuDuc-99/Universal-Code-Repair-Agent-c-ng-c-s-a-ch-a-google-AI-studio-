@@ -28,6 +28,35 @@ export const translations = {
       "5. Reports the final result."
     ],
     close: "Close",
+    executionFlow: {
+      title: "Execution Flow",
+      step1: "Init Engine",
+      step2: "Syntax Check",
+      step3: "Apply Fix",
+      step4: "Verification"
+    },
+    errors: {
+      apiKey: {
+        message: "Invalid API Key or Permission Denied",
+        suggestion: "Please check your .env file and ensure the API_KEY is correct and active."
+      },
+      quota: {
+        message: "Quota Exceeded",
+        suggestion: "You have exceeded your API request quota. Please try again later."
+      },
+      server: {
+        message: "Server Error",
+        suggestion: "Google's servers are experiencing issues. Please try again in a few moments."
+      },
+      safety: {
+        message: "Safety Block",
+        suggestion: "The code content triggered safety filters. Please remove sensitive or harmful content."
+      },
+      default: {
+        message: "Repair Process Failed",
+        suggestion: "Please check your internet connection and try again."
+      }
+    },
     examples: {
       python: `def calculate_sum(a, b)\n    return a + b\n\nresult = calculate_sum(10, 20\nprint(f"Result is {result")`,
       json: `{\n  "id": 1,\n  "name": "Gemini",\n  "tags": ["AI", "Google",],\n  "active": true\n}`,
@@ -66,6 +95,35 @@ export const translations = {
       "5. Báo cáo kết quả cuối cùng."
     ],
     close: "Đóng",
+    executionFlow: {
+      title: "Luồng Thực Thi",
+      step1: "Khởi tạo Engine",
+      step2: "Kiểm tra Cú pháp",
+      step3: "Áp dụng Sửa lỗi",
+      step4: "Xác minh Thực thi"
+    },
+    errors: {
+      apiKey: {
+        message: "API Key không hợp lệ hoặc bị từ chối",
+        suggestion: "Vui lòng kiểm tra file .env và đảm bảo API_KEY chính xác."
+      },
+      quota: {
+        message: "Vượt quá hạn ngạch",
+        suggestion: "Bạn đã vượt quá giới hạn request. Vui lòng thử lại sau."
+      },
+      server: {
+        message: "Lỗi Máy chủ",
+        suggestion: "Máy chủ Google đang gặp sự cố. Vui lòng thử lại sau giây lát."
+      },
+      safety: {
+        message: "Bộ lọc An toàn",
+        suggestion: "Nội dung code vi phạm chính sách an toàn. Vui lòng loại bỏ nội dung nhạy cảm."
+      },
+      default: {
+        message: "Quy trình sửa lỗi thất bại",
+        suggestion: "Vui lòng kiểm tra kết nối mạng và thử lại."
+      }
+    },
     examples: {
       python: `def tinh_tong(a, b)\n    tra_ve a + b\n\nket_qua = tinh_tong(10, 20\nprint(f"Ket qua la {ket_qua")`,
       json: `{\n  "id": 1,\n  "ten": "Gemini",\n  "the": ["AI", "Google",],\n  "hoat_dong": true\n}`,

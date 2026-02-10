@@ -12,6 +12,7 @@ interface CodePanelProps {
   onClear?: () => void;
   copyTooltip?: string;
   clearTooltip?: string;
+  topContent?: React.ReactNode;
 }
 
 export const CodePanel: React.FC<CodePanelProps> = ({ 
@@ -24,7 +25,8 @@ export const CodePanel: React.FC<CodePanelProps> = ({
   actions,
   onClear,
   copyTooltip = "Copy to clipboard",
-  clearTooltip = "Clear content"
+  clearTooltip = "Clear content",
+  topContent
 }) => {
   const [copied, setCopied] = React.useState(false);
 
@@ -36,7 +38,7 @@ export const CodePanel: React.FC<CodePanelProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-gray-900 rounded-xl border border-gray-800 overflow-hidden shadow-xl">
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-850 border-b border-gray-800">
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-850 border-b border-gray-800 shrink-0">
         <div className="flex items-center gap-2 text-gray-300 font-medium">
           {icon}
           <span>{title}</span>
@@ -62,7 +64,14 @@ export const CodePanel: React.FC<CodePanelProps> = ({
           </button>
         </div>
       </div>
-      <div className="flex-1 relative">
+      
+      {topContent && (
+        <div className="shrink-0">
+          {topContent}
+        </div>
+      )}
+
+      <div className="flex-1 relative min-h-0">
         <textarea
           value={code}
           onChange={(e) => onChange?.(e.target.value)}

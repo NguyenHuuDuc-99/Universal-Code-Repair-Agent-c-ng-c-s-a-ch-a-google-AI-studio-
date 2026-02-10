@@ -10,3 +10,8 @@ export interface RepairResult {
 }
 
 export type Language = 'en' | 'vi';
+
+export interface AppError {
+  message: string;
+  suggestion?: string;
+}

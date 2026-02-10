@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { CodeType, Language } from "../types";
+import { CodeType, Language, AppError } from "../types";
 
 // The specific system instruction provided by the user to enforce the "UniversalDebugEngine" behavior.
 const SYSTEM_INSTRUCTION = `
@@ -51,14 +51,36 @@ class UniversalDebugEngine:
        print("NỘI DUNG SAU KHI SỬA:")
        print(self.fixed_content)
 
-{{PROTOCOL}}
-Khi người dùng gửi code lỗi:
-1. Viết code Python khởi tạo \`UniversalDebugEngine\`.
-2. Đưa code lỗi của người dùng vào biến \`content\`.
-3. Tự động sửa lỗi trong code Python (ví dụ: thêm ngoặc, xóa dấu phẩy thừa).
-4. Gọi hàm \`apply_fix()\` để cập nhật bản sửa.
-5. Gọi hàm \`report()\` để in kết quả ra màn hình.
-6. CHẠY CODE (Execute) để chứng minh.
+{{PROTOCOL_NANG_CAO}}
+Khi nhận code từ người dùng, bạn phải tuân thủ quy trình "Tự Chữa Lành" (Self-Healing):
+
+Bước 1: Khởi tạo \`UniversalDebugEngine\` với code của người dùng.
+Bước 2: Gọi hàm \`check_syntax()\`.
+   - Nếu OK: Chạy thử logic code (nếu có thể).
+   - Nếu LỖI:
+     a. Đọc kỹ thông báo lỗi.
+     b. So sánh với các pattern lỗi trong trí nhớ (Few-shot).
+     c. Áp dụng sửa lỗi vào biến \`content\`.
+     d. QUAY LẠI BƯỚC 2 (Lặp lại quy trình này cho đến khi hết lỗi).
+
+Bước 3: Chỉ khi nào \`check_syntax == True\` và chạy thử không báo lỗi đỏ, mới in ra kết quả cuối cùng cho người dùng.
+
+{{EXAMPLES}}
+Học từ các ví dụ sửa lỗi sau đây để áp dụng:
+
+Ví dụ 1 (Lỗi JSON kinh điển):
+- Input: { "name": "Gemini", "age": 25, }
+- Suy luận: Thừa dấu phẩy sau số 25.
+- Fix: { "name": "Gemini", "age": 25 }
+
+Ví dụ 2 (Lỗi Python Logic):
+- Input:
+  def chao():
+  print("Hello")
+- Suy luận: Lỗi thụt đầu dòng (IndentationError).
+- Fix:
+  def chao():
+      print("Hello")
 `;
 
 export const repairCode = async (code: string, type: CodeType, language: Language = 'en'): Promise<string> => {
@@ -80,9 +102,38 @@ export const repairCode = async (code: string, type: CodeType, language: Languag
       }
     });
 
-    return response.text || "No response generated.";
-  } catch (error) {
+    if (!response.text) {
+        throw new Error("Empty response from AI");
+    }
+
+    return response.text;
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
-    throw new Error("Failed to repair code. Please check your API key and try again.");
+    
+    const appError: AppError = {
+        message: "Error",
+        suggestion: "Please try again."
+    };
+
+    const msg = error.message || error.toString();
+    
+    if (msg.includes("401") || msg.includes("403") || msg.includes("API key")) {
+        appError.message = "API Key Error";
+        appError.suggestion = "Check your .env file or API key permissions."; // Will be overridden by translation in App
+        throw appError;
+    } else if (msg.includes("429") || msg.includes("Quota")) {
+        appError.message = "Quota Exceeded";
+        throw appError;
+    } else if (msg.includes("500") || msg.includes("503")) {
+        appError.message = "Server Error";
+        throw appError;
+    } else if (msg.includes("Safety") || msg.includes("blocked")) {
+        appError.message = "Safety Block";
+        throw appError;
+    }
+    
+    // Generic fallback
+    appError.message = msg;
+    throw appError;
   }
 };
