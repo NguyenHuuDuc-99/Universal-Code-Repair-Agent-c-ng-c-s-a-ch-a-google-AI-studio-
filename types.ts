@@ -4,6 +4,11 @@ export enum CodeType {
   PROMPT = 'Prompt'
 }
 
+export interface RepairResponse {
+  report: string;
+  fixedCode: string;
+}
+
 export interface RepairResult {
   text: string;
   error?: string;

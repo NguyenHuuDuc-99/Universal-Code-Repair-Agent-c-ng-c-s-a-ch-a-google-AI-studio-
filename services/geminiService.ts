@@ -1,5 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
-import { CodeType, Language, AppError } from "../types";
+import { GoogleGenAI, Type } from "@google/genai";
+import { CodeType, Language, AppError, RepairResponse } from "../types";
 
 // The specific system instruction provided by the user to enforce the "UniversalDebugEngine" behavior.
 const SYSTEM_INSTRUCTION = `
@@ -83,7 +83,7 @@ Ví dụ 2 (Lỗi Python Logic):
       print("Hello")
 `;
 
-export const repairCode = async (code: string, type: CodeType, language: Language = 'en'): Promise<string> => {
+export const repairCode = async (code: string, type: CodeType, language: Language = 'en'): Promise<RepairResponse> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
@@ -98,7 +98,22 @@ export const repairCode = async (code: string, type: CodeType, language: Languag
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         // CRITICAL: Enable Code Execution so the model can run the python class defined in system instructions.
-        tools: [{ codeExecution: {} }], 
+        tools: [{ codeExecution: {} }],
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            report: {
+              type: Type.STRING,
+              description: "A detailed report of the errors found and fixed, including the status.",
+            },
+            fixedCode: {
+              type: Type.STRING,
+              description: "The corrected code block.",
+            },
+          },
+          required: ["report", "fixedCode"],
+        },
       }
     });
 
@@ -106,7 +121,7 @@ export const repairCode = async (code: string, type: CodeType, language: Languag
         throw new Error("Empty response from AI");
     }
 
-    return response.text;
+    return JSON.parse(response.text) as RepairResponse;
   } catch (error: any) {
     console.error("Gemini API Error:", error);
     

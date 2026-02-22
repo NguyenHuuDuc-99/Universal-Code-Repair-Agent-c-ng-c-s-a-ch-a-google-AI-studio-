@@ -11,6 +11,7 @@ import { Play, Terminal, FileJson, Hash, MessageSquareText, Loader2, AlertCircle
 const App: React.FC = () => {
   const [inputCode, setInputCode] = useState<string>('');
   const [outputCode, setOutputCode] = useState<string>('');
+  const [report, setReport] = useState<string>('');
   const [selectedType, setSelectedType] = useState<CodeType>(CodeType.JSON);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<AppError | null>(null);
@@ -29,11 +30,13 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setOutputCode('');
+    setReport('');
 
     try {
       // Pass the current language to the service
       const result = await repairCode(inputCode, selectedType, language);
-      setOutputCode(result);
+      setOutputCode(result.fixedCode);
+      setReport(result.report);
     } catch (err: any) {
       // Handle structured AppError or generic error
       let appError: AppError = {
@@ -71,6 +74,7 @@ const App: React.FC = () => {
 
   const handleClearOutput = () => {
     setOutputCode('');
+    setReport('');
     setError(null);
   };
 
@@ -191,14 +195,14 @@ const App: React.FC = () => {
 
         {/* Right Panel: Output */}
         <section className="flex-1 flex flex-col h-full min-h-[400px]">
-          <div className="mb-4 h-[42px] flex items-center text-gray-400 text-sm">
+          <div className="mb-4 h-[42px] flex items-center text-white text-sm">
             <span className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
               {language === 'vi' ? 'Luồng đầu ra' : 'Output Stream'}
             </span>
           </div>
 
-          <div className="relative flex-1">
+          <div className="relative flex-1 flex flex-col gap-4 min-h-0">
              {error ? (
               <div className="absolute inset-0 bg-gray-900 rounded-xl border border-red-900/50 flex flex-col items-center justify-center text-red-400 p-6 text-center z-20">
                 <div className="bg-gray-800 p-6 rounded-2xl border border-red-900/50 shadow-2xl max-w-md w-full">
@@ -225,23 +229,40 @@ const App: React.FC = () => {
                 </div>
               </div>
              ) : (
-               <CodePanel 
-                title={t.outputTitle}
-                icon={<Terminal className="w-4 h-4 text-green-400" />}
-                code={outputCode}
-                readOnly={true}
-                onClear={handleClearOutput}
-                copyTooltip={t.copy}
-                clearTooltip={t.clear}
-                placeholder={isLoading ? t.outputPlaceholderLoading : t.outputPlaceholderDefault}
-                topContent={
-                  <ExecutionFlow 
-                    status={isLoading ? 'loading' : error ? 'error' : outputCode ? 'success' : 'idle'}
-                    resultText={outputCode}
-                    language={language}
+               <>
+                 <div className="shrink-0">
+                   <ExecutionFlow 
+                     status={isLoading ? 'loading' : error ? 'error' : (outputCode || report) ? 'success' : 'idle'}
+                     resultText={report}
+                     language={language}
+                   />
+                 </div>
+
+                 {report && (
+                    <div className="bg-gray-900 rounded-xl border border-gray-800 flex flex-col overflow-hidden shadow-xl shrink-0 max-h-[30%]">
+                        <div className="px-4 py-2 bg-gray-850 border-b border-gray-800 text-gray-300 font-medium text-sm flex items-center gap-2">
+                            <Terminal className="w-4 h-4 text-blue-400" />
+                            <span>{language === 'vi' ? 'Báo cáo chi tiết' : 'Detailed Report'}</span>
+                        </div>
+                        <div className="p-4 overflow-auto bg-gray-950">
+                            <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono">{report}</pre>
+                        </div>
+                    </div>
+                 )}
+
+                 <div className="flex-1 min-h-0">
+                   <CodePanel 
+                    title={t.outputTitle}
+                    icon={<Terminal className="w-4 h-4 text-green-400" />}
+                    code={outputCode}
+                    readOnly={true}
+                    onClear={handleClearOutput}
+                    copyTooltip={t.copy}
+                    clearTooltip={t.clear}
+                    placeholder={isLoading ? t.outputPlaceholderLoading : t.outputPlaceholderDefault}
                   />
-                }
-              />
+                 </div>
+               </>
              )}
           </div>
         </section>
